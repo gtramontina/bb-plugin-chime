@@ -7,6 +7,11 @@ import {
   EVENT_LABELS,
   SOUND_IDS,
   SOUND_LABELS,
+  THEME_DESCRIPTIONS,
+  THEME_IDS,
+  THEME_LABELS,
+  THEME_SOUNDS,
+  matchingTheme,
   type ChimeConfig,
   type EventKind,
   type SoundId,
@@ -116,7 +121,31 @@ function Settings() {
       <section className="chime-card">
         <div>
           <h3>Events</h3>
-          <p>Choose which transitions sound and the tone used for each.</p>
+          <p>Choose a coordinated theme, then fine-tune any event.</p>
+        </div>
+        <div className="chime-theme-row">
+          <label className="chime-stack">
+            <span>Sound theme</span>
+            <select
+              aria-label="Sound theme"
+              value={matchingTheme(config.eventSounds)}
+              onChange={(event) => {
+                const themeId = event.target.value;
+                if (themeId === "custom") return;
+                setConfig({ ...config, eventSounds: { ...THEME_SOUNDS[themeId as keyof typeof THEME_SOUNDS] } });
+              }}
+            >
+              {matchingTheme(config.eventSounds) === "custom" && <option value="custom">Custom</option>}
+              {THEME_IDS.map((themeId) => (
+                <option key={themeId} value={themeId}>
+                  {THEME_LABELS[themeId]} · {THEME_DESCRIPTIONS[themeId]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button type="button" variant="outline" onClick={() => void preview(config.eventSounds.completed)}>
+            Preview completion
+          </Button>
         </div>
         <div className="chime-events">
           {EVENT_KINDS.map((kind) => (
@@ -126,7 +155,13 @@ function Settings() {
                 <span>{EVENT_LABELS[kind]}</span>
               </label>
               <select aria-label={`${EVENT_LABELS[kind]} sound`} value={config.eventSounds[kind]} onChange={(event) => patchEvent(kind, { sound: event.target.value as SoundId })}>
-                {SOUND_IDS.map((soundId) => <option key={soundId} value={soundId}>{SOUND_LABELS[soundId]}</option>)}
+                {THEME_IDS.map((themeId) => (
+                  <optgroup key={themeId} label={THEME_LABELS[themeId]}>
+                    {SOUND_IDS.filter((soundId) => Object.values(THEME_SOUNDS[themeId]).includes(soundId)).map((soundId) => (
+                      <option key={soundId} value={soundId}>{SOUND_LABELS[soundId]}</option>
+                    ))}
+                  </optgroup>
+                ))}
               </select>
               <Button type="button" size="sm" variant="ghost" onClick={() => void preview(config.eventSounds[kind])}>Preview</Button>
             </div>

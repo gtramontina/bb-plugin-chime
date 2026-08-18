@@ -1,8 +1,24 @@
 import { describe, expect, it, vi } from "vitest";
 import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
 import plugin from "./server";
+import { SOUND_IDS } from "./domain";
 
 describe("Chime backend", () => {
+  it("serves every themed sound as a WAV asset", async () => {
+    const { bb, harness } = createFakePluginHost({
+      pluginId: "chime",
+      sdk: { subscribe: () => () => {} },
+    });
+    await plugin(bb);
+
+    for (const soundId of SOUND_IDS) {
+      const response = await harness.behavior.fetchHttp("GET", `/sound-${soundId}`);
+      expect(response.headers.get("content-type")).toBe("audio/wav");
+      expect(Buffer.from(await response.arrayBuffer()).subarray(0, 4).toString()).toBe("RIFF");
+    }
+    await harness.lifecycle.dispose();
+  });
+
   it("publishes lifecycle events without message content", async () => {
     const { bb, harness } = createFakePluginHost({
       pluginId: "chime",

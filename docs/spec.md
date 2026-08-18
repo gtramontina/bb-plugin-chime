@@ -9,10 +9,11 @@ Chime is a polished, publishable bb plugin, installed locally first and suitable
 3. Detect manual cancellation on a best-effort basis and fall back to the completion sound when it cannot be distinguished.
 4. Cover all threads by default, including visible and background threads.
 5. Make every event independently toggleable and allow a built-in sound to be selected per event.
-6. Provide master enable and volume controls, visible-thread muting, project muting, and sound previews.
-7. Treat project muting as a denylist: new projects are audible by default.
-8. Coalesce notification storms within one second, with questions, approvals, and failures taking priority over routine sounds.
-9. Discard events older than five seconds rather than replaying stale sounds after reconnect.
+6. Provide Calm, Glass, Wood, and Minimal theme presets. Selecting a preset applies all six coordinated sounds; changing an individual sound yields a Custom selection.
+7. Provide master enable and volume controls, visible-thread muting, project muting, and sound previews.
+8. Treat project muting as a denylist: new projects are audible by default.
+9. Coalesce notification storms within one second, with questions, approvals, and failures taking priority over routine sounds.
+10. Discard events older than five seconds rather than replaying stale sounds after reconnect.
 
 ## Playback
 

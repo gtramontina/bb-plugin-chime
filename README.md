@@ -8,7 +8,8 @@ Chime is a bb plugin that plays calm, configurable notification sounds when AI t
 - Client-local audio in bb desktop windows and browser clients.
 - Best-effort leader election prevents duplicate sounds across tabs on the same origin.
 - Optional macOS server playback through `/usr/bin/afplay`.
-- Master volume, per-event sound selection, visible-thread muting, and a project mute denylist.
+- Calm, Glass, Wood, and Minimal sound themes with per-event customization.
+- Master volume, visible-thread muting, and a project mute denylist.
 - One-second storm suppression prioritizes questions, approvals, and failures.
 - Events older than five seconds are discarded after reconnects.
 - No telemetry, message content, error text, or durable event history.
@@ -51,7 +52,7 @@ npm run build
 npm run smoke:live
 ```
 
-Sound files are original assets generated deterministically by `scripts/generate-sounds.mjs`.
+Sound files contain no third-party samples. They are original assets synthesized and generated deterministically by `scripts/generate-sounds.mjs`, and are distributed under this repository's MIT license.
 The live smoke test expects bb at `http://127.0.0.1:38886`; override it with `CHIME_BB_BASE_URL`.
 
 ## License

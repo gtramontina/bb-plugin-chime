@@ -7,17 +7,18 @@
 .chime-card {
   display: grid;
   gap: 1rem;
-  border: 1px solid var(--color-border, var(--border));
-  border-radius: 0.75rem;
-  background: var(--color-card, var(--card));
-  padding: 1rem;
+  border-bottom: 1px solid var(--color-border, var(--border));
+  padding: 0 0 1rem;
 }
+
+.chime-card:last-of-type { border-bottom: 0; }
 
 .chime-card h3 { margin: 0; font-size: 0.95rem; font-weight: 600; }
 .chime-card p { margin: 0.2rem 0 0; font-size: 0.82rem; color: var(--color-muted-foreground, var(--muted-foreground)); }
 .chime-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: 0.875rem; }
 .chime-stack { display: grid; gap: 0.4rem; font-size: 0.875rem; }
 .chime-stack select, .chime-event select { min-height: 2.25rem; border: 1px solid var(--color-border, var(--border)); border-radius: 0.5rem; background: var(--color-background, var(--background)); padding: 0 0.65rem; }
+.chime-theme-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 0.75rem; }
 .chime-events { display: grid; gap: 0.5rem; }
 .chime-event { display: grid; grid-template-columns: minmax(11rem, 1fr) minmax(10rem, 14rem) auto; align-items: center; gap: 0.75rem; }
 .chime-event label { display: flex; align-items: center; gap: 0.6rem; font-size: 0.875rem; }
@@ -26,6 +27,9 @@
 .chime-muted { color: var(--color-muted-foreground, var(--muted-foreground)); font-size: 0.8rem; }
 
 @media (max-width: 640px) {
+  .chime-actions { align-items: flex-start; flex-direction: column; }
+  .chime-theme-row { grid-template-columns: 1fr; align-items: stretch; }
   .chime-event { grid-template-columns: 1fr auto; }
-  .chime-event select { grid-column: 1 / -1; }
+  .chime-event > button { grid-column: 2; grid-row: 1; }
+  .chime-event select { grid-column: 1 / -1; grid-row: 2; }
 }

@@ -9,6 +9,10 @@ export const EVENT_KINDS = [
 
 export type EventKind = (typeof EVENT_KINDS)[number];
 
+export const THEME_IDS = ["calm", "glass", "wood", "minimal"] as const;
+
+export type ThemeId = (typeof THEME_IDS)[number];
+
 export const SOUND_IDS = [
   "soft-rise",
   "warm-resolve",
@@ -16,6 +20,24 @@ export const SOUND_IDS = [
   "gentle-knock",
   "low-warning",
   "soft-stop",
+  "glass-rise",
+  "glass-resolve",
+  "glass-question",
+  "glass-knock",
+  "glass-warning",
+  "glass-stop",
+  "wood-rise",
+  "wood-resolve",
+  "wood-question",
+  "wood-knock",
+  "wood-warning",
+  "wood-stop",
+  "minimal-rise",
+  "minimal-resolve",
+  "minimal-question",
+  "minimal-knock",
+  "minimal-warning",
+  "minimal-stop",
 ] as const;
 
 export type SoundId = (typeof SOUND_IDS)[number];
@@ -68,6 +90,48 @@ export const DEFAULT_CONFIG: ChimeConfig = {
   },
 };
 
+export const THEME_LABELS: Record<ThemeId, string> = {
+  calm: "Calm",
+  glass: "Glass",
+  wood: "Wood",
+  minimal: "Minimal",
+};
+
+export const THEME_DESCRIPTIONS: Record<ThemeId, string> = {
+  calm: "Soft, rounded chimes",
+  glass: "Bright, airy tones",
+  wood: "Muted, percussive knocks",
+  minimal: "Brief, unobtrusive cues",
+};
+
+export const THEME_SOUNDS: Record<ThemeId, Record<EventKind, SoundId>> = {
+  calm: DEFAULT_CONFIG.eventSounds,
+  glass: {
+    started: "glass-rise",
+    completed: "glass-resolve",
+    question: "glass-question",
+    approval: "glass-knock",
+    failed: "glass-warning",
+    cancelled: "glass-stop",
+  },
+  wood: {
+    started: "wood-rise",
+    completed: "wood-resolve",
+    question: "wood-question",
+    approval: "wood-knock",
+    failed: "wood-warning",
+    cancelled: "wood-stop",
+  },
+  minimal: {
+    started: "minimal-rise",
+    completed: "minimal-resolve",
+    question: "minimal-question",
+    approval: "minimal-knock",
+    failed: "minimal-warning",
+    cancelled: "minimal-stop",
+  },
+};
+
 const EVENT_PRIORITY: Record<EventKind, number> = {
   started: 0,
   completed: 1,
@@ -93,7 +157,31 @@ export const SOUND_LABELS: Record<SoundId, string> = {
   "gentle-knock": "Gentle knock",
   "low-warning": "Low warning",
   "soft-stop": "Soft stop",
+  "glass-rise": "Airy rise",
+  "glass-resolve": "Glass resolve",
+  "glass-question": "Bright question",
+  "glass-knock": "Crystal tap",
+  "glass-warning": "Glass warning",
+  "glass-stop": "Falling glass",
+  "wood-rise": "Wood rise",
+  "wood-resolve": "Wood resolve",
+  "wood-question": "Hollow question",
+  "wood-knock": "Gentle wood knock",
+  "wood-warning": "Low wood warning",
+  "wood-stop": "Wood stop",
+  "minimal-rise": "Single rise",
+  "minimal-resolve": "Double resolve",
+  "minimal-question": "Question pair",
+  "minimal-knock": "Approval tick",
+  "minimal-warning": "Warning pulse",
+  "minimal-stop": "Stop tick",
 };
+
+export function matchingTheme(eventSounds: Record<EventKind, SoundId>): ThemeId | "custom" {
+  return THEME_IDS.find((themeId) => (
+    EVENT_KINDS.every((kind) => eventSounds[kind] === THEME_SOUNDS[themeId][kind])
+  )) ?? "custom";
+}
 
 export function normalizeConfig(value: Partial<ChimeConfig> | null | undefined): ChimeConfig {
   const volume = typeof value?.volume === "number" && Number.isFinite(value.volume)
