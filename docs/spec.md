@@ -31,6 +31,6 @@ Chime is a polished, publishable bb plugin, installed locally first and suitable
 
 ## Delivery quality
 
-1. Use the name Chime, package name `bb-plugin-chime`, `BellRing` branding, and the MIT license.
+1. Use the name Chime, package name `bb-plugin-chime`, plugin-owned bell branding, and the MIT license.
 2. Include backend and frontend unit tests, typechecking, a successful plugin build, local path installation, and live smoke tests.
 3. Document browser autoplay, per-origin coordination, server playback location, and heuristic cancellation detection.

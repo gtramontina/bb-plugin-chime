@@ -18,7 +18,7 @@
     "name": "Chime",
     "description": "Calm, configurable sounds for AI turns and attention events.",
     "branding": {
-      "icon": "BellRing"
+      "icon": "./assets/icon.svg"
     },
     "server": "./server.ts",
     "app": "./app.tsx"
