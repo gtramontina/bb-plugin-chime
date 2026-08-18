@@ -41,10 +41,10 @@ function envelope(time, start, duration, percussive) {
   return Math.min(1, local / attack, (duration - local) / release) * Math.exp(-local * (percussive ? 12 : 2.5));
 }
 
-function toneSample(frequency, time, local, timbre) {
+function toneSample(frequency, time, elapsedTime, timbre) {
   const phase = 2 * Math.PI * frequency * time;
   if (timbre === "glass") {
-    const shimmer = Math.sin(2 * Math.PI * 4.5 * local) * 0.018;
+    const shimmer = Math.sin(2 * Math.PI * 4.5 * elapsedTime) * 0.018;
     return Math.sin(phase + shimmer)
       + Math.sin(phase * 2.01) * 0.23
       + Math.sin(phase * 3.98) * 0.09;
