@@ -1,5 +1,7 @@
 # Chime
 
+[![CI](https://github.com/gtramontina/bb-plugin-chime/actions/workflows/ci.yml/badge.svg)](https://github.com/gtramontina/bb-plugin-chime/actions/workflows/ci.yml)
+
 Chime is a [bb](https://github.com/get-bb/bb) plugin that plays calm, configurable notification sounds when AI turns start, finish, fail, pause for a question, or request approval.
 
 ## Settings
