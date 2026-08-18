@@ -1,0 +1,49 @@
+{
+  "name": "bb-plugin-chime",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "bb plugin build",
+    "generate:sounds": "node scripts/generate-sounds.mjs",
+    "smoke:live": "node scripts/smoke-live.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "bb": ">=0.38",
+    "bbPluginSdk": ">=0.4.6"
+  },
+  "bb": {
+    "name": "Chime",
+    "description": "Calm, configurable sounds for AI turns and attention events.",
+    "branding": {
+      "icon": "BellRing"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.3.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.4.6",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@testing-library/react": "^16.3.0",
+    "better-sqlite3": "^12.0.0",
+    "cron-parser": "^5.4.0",
+    "hono": "^4.11.9",
+    "jsdom": "^26.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.4"
+  }
+}
