@@ -42,7 +42,7 @@
     "better-sqlite3": "12.11.1",
     "cron-parser": "5.10.0",
     "hono": "4.13.2",
-    "jsdom": "26.1.0",
+    "jsdom": "29.1.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "typescript": "5.9.3",
