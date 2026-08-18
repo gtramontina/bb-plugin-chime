@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { definePluginApp, useRpc } from "@get-bb/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import {
@@ -23,6 +23,23 @@ import "./app.css";
 interface ProjectOption {
   id: string;
   name: string;
+}
+
+function SelectChevron() {
+  return (
+    <svg className="chime-select-chevron" aria-hidden="true" viewBox="0 0 16 16">
+      <path d="m4 6 4 4 4-4" />
+    </svg>
+  );
+}
+
+function SelectShell({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <span className={`chime-select${className ? ` ${className}` : ""}`}>
+      {children}
+      <SelectChevron />
+    </span>
+  );
 }
 
 function Settings() {
@@ -97,10 +114,12 @@ function Settings() {
         </label>
         <label className="chime-stack">
           <span>Delivery</span>
-          <select value={config.deliveryMode} onChange={(event) => setConfig({ ...config, deliveryMode: event.target.value as ChimeConfig["deliveryMode"] })}>
-            <option value="client">This browser or bb window</option>
-            <option value="server" disabled={!serverAvailable}>Server audio {serverAvailable ? "(macOS)" : "(unavailable)"}</option>
-          </select>
+          <SelectShell>
+            <select value={config.deliveryMode} onChange={(event) => setConfig({ ...config, deliveryMode: event.target.value as ChimeConfig["deliveryMode"] })}>
+              <option value="client">This browser or bb window</option>
+              <option value="server" disabled={!serverAvailable}>Server audio {serverAvailable ? "(macOS)" : "(unavailable)"}</option>
+            </select>
+          </SelectShell>
         </label>
         <label className="chime-stack">
           <span>Master volume · {Math.round(config.volume * 100)}%</span>
@@ -126,22 +145,24 @@ function Settings() {
         <div className="chime-theme-row">
           <label className="chime-stack">
             <span>Sound theme</span>
-            <select
-              aria-label="Sound theme"
-              value={matchingTheme(config.eventSounds)}
-              onChange={(event) => {
-                const themeId = event.target.value;
-                if (themeId === "custom") return;
-                setConfig({ ...config, eventSounds: { ...THEME_SOUNDS[themeId as keyof typeof THEME_SOUNDS] } });
-              }}
-            >
-              {matchingTheme(config.eventSounds) === "custom" && <option value="custom">Custom</option>}
-              {THEME_IDS.map((themeId) => (
-                <option key={themeId} value={themeId}>
-                  {THEME_LABELS[themeId]} · {THEME_DESCRIPTIONS[themeId]}
-                </option>
-              ))}
-            </select>
+            <SelectShell>
+              <select
+                aria-label="Sound theme"
+                value={matchingTheme(config.eventSounds)}
+                onChange={(event) => {
+                  const themeId = event.target.value;
+                  if (themeId === "custom") return;
+                  setConfig({ ...config, eventSounds: { ...THEME_SOUNDS[themeId as keyof typeof THEME_SOUNDS] } });
+                }}
+              >
+                {matchingTheme(config.eventSounds) === "custom" && <option value="custom">Custom</option>}
+                {THEME_IDS.map((themeId) => (
+                  <option key={themeId} value={themeId}>
+                    {THEME_LABELS[themeId]} · {THEME_DESCRIPTIONS[themeId]}
+                  </option>
+                ))}
+              </select>
+            </SelectShell>
           </label>
           <Button type="button" variant="outline" onClick={() => void preview(config.eventSounds.completed)}>
             Preview completion
@@ -154,15 +175,17 @@ function Settings() {
                 <input type="checkbox" checked={config.eventEnabled[kind]} onChange={(event) => patchEvent(kind, { enabled: event.target.checked })} />
                 <span>{EVENT_LABELS[kind]}</span>
               </label>
-              <select aria-label={`${EVENT_LABELS[kind]} sound`} value={config.eventSounds[kind]} onChange={(event) => patchEvent(kind, { sound: event.target.value as SoundId })}>
-                {THEME_IDS.map((themeId) => (
-                  <optgroup key={themeId} label={THEME_LABELS[themeId]}>
-                    {SOUND_IDS.filter((soundId) => Object.values(THEME_SOUNDS[themeId]).includes(soundId)).map((soundId) => (
-                      <option key={soundId} value={soundId}>{SOUND_LABELS[soundId]}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+              <SelectShell className="chime-event-select">
+                <select aria-label={`${EVENT_LABELS[kind]} sound`} value={config.eventSounds[kind]} onChange={(event) => patchEvent(kind, { sound: event.target.value as SoundId })}>
+                  {THEME_IDS.map((themeId) => (
+                    <optgroup key={themeId} label={THEME_LABELS[themeId]}>
+                      {SOUND_IDS.filter((soundId) => Object.values(THEME_SOUNDS[themeId]).includes(soundId)).map((soundId) => (
+                        <option key={soundId} value={soundId}>{SOUND_LABELS[soundId]}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </SelectShell>
               <Button type="button" size="sm" variant="ghost" onClick={() => void preview(config.eventSounds[kind])}>Preview</Button>
             </div>
           ))}
