@@ -39,7 +39,7 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "bb-app": "0.38.0",
-    "better-sqlite3": "12.11.1",
+    "better-sqlite3": "13.0.3",
     "cron-parser": "5.10.0",
     "hono": "4.13.2",
     "jsdom": "29.1.1",
