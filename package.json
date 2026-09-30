@@ -38,7 +38,7 @@
     "@types/node": "22.20.1",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
-    "bb-app": "0.38.0",
+    "bb-app": "0.44.0",
     "better-sqlite3": "12.11.1",
     "cron-parser": "5.10.0",
     "hono": "4.13.2",
