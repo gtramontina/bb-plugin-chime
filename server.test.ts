@@ -52,6 +52,30 @@ describe("Chime backend", () => {
     await harness.lifecycle.dispose();
   });
 
+  it("ignores hidden helper threads", async () => {
+    const hidden = makeThreadResponse({ id: "helper-1", projectId: "project-1", visibility: "hidden" });
+    const { bb, harness } = createFakePluginHost({
+      pluginId: "chime",
+      sdk: {
+        subscribe: () => () => {},
+        threads: {
+          events: { list: async () => [] },
+          interactions: { list: async () => [] },
+          get: async () => hidden,
+        },
+      },
+    });
+    await plugin(bb);
+
+    await harness.behavior.emitThreadEvent("thread.active", { thread: hidden });
+    await harness.behavior.emitThreadEvent("thread.idle", { thread: hidden, lastAssistantText: null });
+    await harness.behavior.emitThreadEvent("thread.failed", { thread: hidden, error: null });
+    const response = await harness.behavior.fetchHttp("GET", "/events?after=0");
+    const payload = await response.json() as { events: unknown[] };
+    expect(payload.events).toEqual([]);
+    await harness.lifecycle.dispose();
+  });
+
   it("honours muted projects before queueing", async () => {
     const { bb, harness } = createFakePluginHost({
       pluginId: "chime",

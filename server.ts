@@ -71,9 +71,12 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function publishChimeNotification(
     kind: EventKind,
-    thread: { id: string; projectId: string },
+    thread: { id: string; projectId: string; visibility?: string },
     interactionId?: string,
   ): Promise<void> {
+    // Hidden threads are plugin-owned helpers (for example prediction or
+    // summarisation workers); their turns are not the user's work.
+    if (thread.visibility === "hidden") return;
     const config = await loadConfig(bb);
     if (!config.enabled || !config.eventEnabled[kind] || config.mutedProjectIds.includes(thread.projectId)) {
       return;
