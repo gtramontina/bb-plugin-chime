@@ -2,6 +2,7 @@ import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
 import { z } from "zod";
 import {
   EVENT_KINDS,
+  NOTIFICATION_CHANNEL,
   SOUND_IDS,
   chooseStormNotification,
   normalizeConfig,
@@ -9,7 +10,7 @@ import {
   type ChimeNotification,
   type EventKind,
 } from "./domain";
-import { EventBroker, classifyIdleEvent, classifyPendingInteraction } from "./event-broker";
+import { classifyIdleEvent, classifyPendingInteraction } from "./classify";
 import { ClientPresence } from "./client-presence";
 import { isServerPlaybackAvailable, playServerSound, readSoundAsset } from "./server-audio";
 import { StormBuffer } from "./storm-buffer";
@@ -49,10 +50,6 @@ async function loadConfig(bb: BbPluginApi): Promise<ChimeConfig> {
 }
 
 export default async function plugin(bb: BbPluginApi) {
-  const broker = new EventBroker();
-  const seenInteractionsByThread = new Map<string, Set<string>>();
-  const scanningThreads = new Set<string>();
-  const pendingRescans = new Set<string>();
   const clientPresence = new ClientPresence();
   const serverPlaybackAvailable = isServerPlaybackAvailable();
   const serverStorm = new StormBuffer<{ notification: ChimeNotification; config: ChimeConfig }>(
@@ -78,39 +75,19 @@ export default async function plugin(bb: BbPluginApi) {
     if (!config.enabled || !config.eventEnabled[kind] || config.mutedProjectIds.includes(thread.projectId)) {
       return;
     }
-    const queued = broker.publish({ kind, threadId: thread.id, projectId: thread.projectId, interactionId });
-    if (config.deliveryMode === "server" && serverPlaybackAvailable) {
+    const notification: ChimeNotification = {
+      id: crypto.randomUUID(),
+      kind,
+      threadId: thread.id,
+      projectId: thread.projectId,
+      interactionId,
+      timestamp: Date.now(),
+    };
+    if (config.deliveryMode === "client") {
+      bb.realtime.publish(NOTIFICATION_CHANNEL, { notification, config });
+    } else if (serverPlaybackAvailable) {
       if (config.muteVisibleThread && clientPresence.isVisible(thread.id)) return;
-      serverStorm.push({ notification: queued.notification, config });
-    }
-  }
-
-  async function scanPendingInteractions(threadId: string): Promise<void> {
-    if (scanningThreads.has(threadId)) {
-      pendingRescans.add(threadId);
-      return;
-    }
-    scanningThreads.add(threadId);
-    try {
-      do {
-        pendingRescans.delete(threadId);
-        const interactions = await bb.sdk.threads.interactions.list({ threadId });
-        const thread = await bb.sdk.threads.get({ threadId });
-        const previouslySeen = seenInteractionsByThread.get(threadId) ?? new Set<string>();
-        const pendingIds = new Set<string>();
-        for (const interaction of interactions) {
-          const kind = classifyPendingInteraction(interaction);
-          if (!kind) continue;
-          pendingIds.add(interaction.id);
-          if (!previouslySeen.has(interaction.id)) {
-            await publishChimeNotification(kind, thread, interaction.id);
-          }
-        }
-        if (pendingIds.size > 0) seenInteractionsByThread.set(threadId, pendingIds);
-        else seenInteractionsByThread.delete(threadId);
-      } while (pendingRescans.has(threadId));
-    } finally {
-      scanningThreads.delete(threadId);
+      serverStorm.push({ notification, config });
     }
   }
 
@@ -125,23 +102,11 @@ export default async function plugin(bb: BbPluginApi) {
     }
   });
   bb.events.on("thread.failed", ({ thread }) => publishChimeNotification("failed", thread));
-  bb.events.on("thread.archived", ({ thread }) => {
-    seenInteractionsByThread.delete(thread.id);
-  });
-  bb.events.on("thread.deleted", ({ thread }) => {
-    seenInteractionsByThread.delete(thread.id);
+  bb.events.on("interaction.pending", async ({ thread, interaction }) => {
+    const kind = classifyPendingInteraction(interaction);
+    if (kind) await publishChimeNotification(kind, thread, interaction.id);
   });
 
-  const unsubscribe = bb.sdk.subscribe({
-    event: "thread:changed",
-    callback: (event) => {
-      if (!event.id || !event.changes.includes("interactions-changed")) return;
-      void scanPendingInteractions(event.id).catch((error: unknown) => {
-        bb.log.warn(`interaction scan failed: ${error instanceof Error ? error.message : String(error)}`);
-      });
-    },
-  });
-  bb.onDispose(unsubscribe);
   bb.onDispose(() => serverStorm.dispose());
 
   bb.rpc.register(rpcContract, {
@@ -168,13 +133,6 @@ export default async function plugin(bb: BbPluginApi) {
         return { ok: false, error: error instanceof Error ? error.message : String(error) };
       }
     },
-  });
-
-  bb.http.route("GET", "/events", async (context) => {
-    const afterText = context.req.query("after") ?? "0";
-    const after = /^\d+$/.test(afterText) ? Number(afterText) : 0;
-    const result = broker.after(after);
-    return context.json({ ...result, config: await loadConfig(bb) });
   });
 
   bb.http.route("GET", "/presence", (context) => {

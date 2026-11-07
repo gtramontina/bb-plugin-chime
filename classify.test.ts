@@ -1,22 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EventBroker, classifyIdleEvent, classifyPendingInteraction } from "./event-broker";
-
-describe("EventBroker", () => {
-  it("uses cursors without persisting history", () => {
-    const broker = new EventBroker();
-    broker.publish({ kind: "started", threadId: "t1", projectId: "p1" }, 1_000);
-    const second = broker.publish({ kind: "completed", threadId: "t1", projectId: "p1" }, 1_100);
-
-    expect(broker.after(0, 1_200).events).toHaveLength(2);
-    expect(broker.after(second.seq, 1_200).events).toEqual([]);
-  });
-
-  it("expires transient events", () => {
-    const broker = new EventBroker();
-    broker.publish({ kind: "started", threadId: "t1", projectId: "p1" }, 1_000);
-    expect(broker.after(0, 31_001).events).toEqual([]);
-  });
-});
+import { classifyIdleEvent, classifyPendingInteraction } from "./classify";
 
 describe("classifyPendingInteraction", () => {
   it("recognizes pending questions and approvals only", () => {

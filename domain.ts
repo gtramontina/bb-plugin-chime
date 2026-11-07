@@ -41,6 +41,8 @@ export const SOUND_IDS = [
 ] as const;
 
 export type SoundId = (typeof SOUND_IDS)[number];
+export const NOTIFICATION_CHANNEL = "notification";
+
 export type DeliveryMode = "client" | "server";
 
 export interface ChimeConfig {
@@ -54,16 +56,12 @@ export interface ChimeConfig {
 }
 
 export interface ChimeNotification {
+  id: string;
   kind: EventKind;
   threadId: string;
   projectId: string;
   interactionId?: string;
   timestamp: number;
-}
-
-export interface QueuedChimeNotification {
-  seq: number;
-  notification: ChimeNotification;
 }
 
 export const DEFAULT_CONFIG: ChimeConfig = {
@@ -210,24 +208,6 @@ export function normalizeConfig(value: Partial<ChimeConfig> | null | undefined):
   };
 }
 
-function decodedPathSegments(pathname: string): string[] {
-  return pathname.split("/").map((segment) => {
-    try {
-      return decodeURIComponent(segment);
-    } catch {
-      return segment;
-    }
-  });
-}
-
-export function isVisibleThread(threadId: string, pathname: string): boolean {
-  return decodedPathSegments(pathname).includes(threadId);
-}
-
-export function visibleThreadId(pathname: string): string | null {
-  return decodedPathSegments(pathname).find((segment) => segment.startsWith("thr_")) ?? null;
-}
-
 export function chooseStormNotification(notifications: ChimeNotification[]): ChimeNotification | null {
   return notifications.reduce<ChimeNotification | null>((chosen, notification) => {
     if (!chosen) return notification;
@@ -242,12 +222,12 @@ export function shouldPlayNotification(
   notification: ChimeNotification,
   config: ChimeConfig,
   now: number,
-  pathname: string,
+  visibleThreadIds: ReadonlySet<string>,
 ): boolean {
   if (!config.enabled || config.deliveryMode !== "client") return false;
   if (!config.eventEnabled[notification.kind]) return false;
   if (now - notification.timestamp > 5_000) return false;
   if (config.mutedProjectIds.includes(notification.projectId)) return false;
-  if (config.muteVisibleThread && isVisibleThread(notification.threadId, pathname)) return false;
+  if (config.muteVisibleThread && visibleThreadIds.has(notification.threadId)) return false;
   return true;
 }

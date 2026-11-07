@@ -1,10 +1,11 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { definePluginApp, useRpc } from "@get-bb/plugin-sdk/app";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { definePluginApp, useBbContext, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import {
   DEFAULT_CONFIG,
   EVENT_KINDS,
   EVENT_LABELS,
+  NOTIFICATION_CHANNEL,
   SOUND_IDS,
   SOUND_LABELS,
   THEME_DESCRIPTIONS,
@@ -16,7 +17,7 @@ import {
   type EventKind,
   type SoundId,
 } from "./domain";
-import { audioActivationStatus, playClientSound, startAudioClient } from "./client-audio";
+import { audioActivationStatus, createAudioClient, playClientSound } from "./client-audio";
 import { Button } from "./components/ui/button";
 import "./app.css";
 
@@ -40,6 +41,26 @@ function SelectShell({ children, className }: { children: ReactNode; className?:
       <SelectChevron />
     </span>
   );
+}
+
+function AudioClient() {
+  const { threadId } = useBbContext();
+  const client = useRef<ReturnType<typeof createAudioClient> | null>(null);
+  useEffect(() => {
+    const next = createAudioClient("chime");
+    client.current = next;
+    return () => {
+      client.current = null;
+      next.dispose();
+    };
+  }, []);
+  useEffect(() => {
+    client.current?.setThreadId(threadId);
+  }, [threadId]);
+  useRealtime(NOTIFICATION_CHANNEL, (payload) => {
+    void client.current?.receive(payload);
+  });
+  return null;
 }
 
 function Settings() {
@@ -223,12 +244,7 @@ function Settings() {
 }
 
 export default definePluginApp((app) => {
-  app.contentScripts.register({
-    id: "audio-client",
-    mount({ pluginId, signal }) {
-      return startAudioClient(pluginId, signal);
-    },
-  });
+  app.slots.experimental_appOverlay({ id: "audio-client", component: AudioClient });
   app.slots.settingsSection({
     id: "chime-settings",
     title: "Chime settings",
