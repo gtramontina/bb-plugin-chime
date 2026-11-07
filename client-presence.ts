@@ -1,4 +1,4 @@
-const PRESENCE_TTL_MS = 3_000;
+const PRESENCE_TTL_MS = 75_000;
 
 export class ClientPresence {
   private clients = new Map<string, { threadId: string | null; seenAt: number }>();

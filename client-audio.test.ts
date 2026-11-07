@@ -1,25 +1,19 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
-import { claimAudioLeadership } from "./client-audio";
+import { claimNotification } from "./client-audio";
 
-describe("audio client leadership", () => {
+describe("audio client claims", () => {
   beforeEach(() => localStorage.clear());
 
-  it("allows one leader per origin until its lease expires", () => {
-    expect(claimAudioLeadership("client-a", 1_000)).toBe(true);
-    expect(claimAudioLeadership("client-b", 1_500)).toBe(false);
-    expect(claimAudioLeadership("client-b", 3_001)).toBe(true);
+  it("lets one window or tab claim each notification", () => {
+    expect(claimNotification("notification-1")).toBe(true);
+    expect(claimNotification("notification-1")).toBe(false);
+    expect(claimNotification("notification-2")).toBe(true);
   });
 
-  it("lets the current leader renew its lease", () => {
-    expect(claimAudioLeadership("client-a", 1_000)).toBe(true);
-    expect(claimAudioLeadership("client-a", 2_500)).toBe(true);
-    expect(claimAudioLeadership("client-b", 3_000)).toBe(false);
-  });
-
-  it("lets a visible client preempt a hidden leader", () => {
-    expect(claimAudioLeadership("hidden-client", 1_000, 0)).toBe(true);
-    expect(claimAudioLeadership("visible-client", 1_100, 1)).toBe(true);
-    expect(claimAudioLeadership("hidden-client", 1_200, 0)).toBe(false);
+  it("recovers from a corrupt claim list", () => {
+    localStorage.setItem("bb-plugin-chime:played", "{");
+    expect(claimNotification("notification-1")).toBe(true);
+    expect(claimNotification("notification-1")).toBe(false);
   });
 });

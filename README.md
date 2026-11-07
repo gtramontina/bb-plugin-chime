@@ -12,7 +12,7 @@ Chime is a [bb](https://github.com/get-bb/bb) plugin that plays calm, configurab
 
 - Six independently configurable events: started, completed, question, approval, failed, and best-effort cancellation.
 - Client-local audio in [bb](https://github.com/get-bb/bb) desktop windows and browser clients.
-- Best-effort leader election prevents duplicate sounds across tabs on the same origin.
+- Events arrive over bb's realtime connection, with no polling, and one tab per origin plays each sound.
 - Optional macOS server playback through `/usr/bin/afplay`.
 - Calm, Glass, Wood, and Minimal sound themes with per-event customization.
 - Master volume, visible-thread muting, and a project mute denylist.
@@ -35,7 +35,7 @@ Open **Settings → Plugins → Chime**, choose **Enable and test sounds**, then
 
 Browsers require a user gesture before allowing audio. Chime attempts to unlock audio on the first pointer or keyboard interaction, and the settings page reports whether playback is active or blocked.
 
-Leader election is scoped to one browser origin. A local [bb](https://github.com/get-bb/bb) window and a remote [bb](https://github.com/get-bb/bb) client use different origins, so both may sound. This is intentional: sound follows the device where each client is open.
+Duplicate suppression is scoped to one browser origin. A local [bb](https://github.com/get-bb/bb) window and a remote [bb](https://github.com/get-bb/bb) client use different origins, so both may sound. This is intentional: sound follows the device where each client is open.
 
 ## Server playback
 

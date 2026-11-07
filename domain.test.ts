@@ -9,11 +9,11 @@ import {
   matchingTheme,
   normalizeConfig,
   shouldPlayNotification,
-  visibleThreadId,
   type ChimeNotification,
 } from "./domain";
 
 const baseNotification: ChimeNotification = {
+  id: "notification-1",
   kind: "completed",
   threadId: "thread-1",
   projectId: "project-1",
@@ -35,20 +35,17 @@ describe("notification policy", () => {
   });
 
   it("rejects stale, muted, and visible-thread events", () => {
-    expect(shouldPlayNotification(baseNotification, DEFAULT_CONFIG, 15_001, "/threads/elsewhere")).toBe(false);
-    expect(shouldPlayNotification(baseNotification, { ...DEFAULT_CONFIG, mutedProjectIds: ["project-1"] }, 10_100, "/")).toBe(false);
-    expect(shouldPlayNotification(baseNotification, { ...DEFAULT_CONFIG, muteVisibleThread: true }, 10_100, "/threads/thread-1")).toBe(false);
+    const muteVisible = { ...DEFAULT_CONFIG, muteVisibleThread: true };
+    expect(shouldPlayNotification(baseNotification, DEFAULT_CONFIG, 15_001, new Set())).toBe(false);
+    expect(shouldPlayNotification(baseNotification, { ...DEFAULT_CONFIG, mutedProjectIds: ["project-1"] }, 10_100, new Set())).toBe(false);
+    expect(shouldPlayNotification(baseNotification, muteVisible, 10_100, new Set(["thread-1"]))).toBe(false);
+    expect(shouldPlayNotification(baseNotification, muteVisible, 10_100, new Set(["thread-2"]))).toBe(true);
   });
 
   it("lets attention events override routine storm events", () => {
     const failed: ChimeNotification = { ...baseNotification, kind: "failed", timestamp: 10_050 };
     const started: ChimeNotification = { ...baseNotification, kind: "started", timestamp: 10_100 };
     expect(chooseStormNotification([baseNotification, failed, started])).toEqual(failed);
-  });
-
-  it("finds the visible bb thread without exposing other route segments", () => {
-    expect(visibleThreadId("/projects/proj_1/threads/thr_visible")).toBe("thr_visible");
-    expect(visibleThreadId("/settings/plugins/chime")).toBeNull();
   });
 
   it("provides a complete, valid sound set for every theme", () => {

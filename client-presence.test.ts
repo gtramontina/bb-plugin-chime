@@ -9,9 +9,9 @@ describe("ClientPresence", () => {
     expect(presence.isVisible("thr_other", 2_000)).toBe(false);
   });
 
-  it("expires clients that stop polling", () => {
+  it("expires clients that stop reporting", () => {
     const presence = new ClientPresence();
     presence.update("client-1", "thr_visible", 1_000);
-    expect(presence.isVisible("thr_visible", 4_001)).toBe(false);
+    expect(presence.isVisible("thr_visible", 76_001)).toBe(false);
   });
 });

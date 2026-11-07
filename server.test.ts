@@ -1,14 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
 import plugin from "./server";
-import { SOUND_IDS } from "./domain";
+import { NOTIFICATION_CHANNEL, SOUND_IDS } from "./domain";
 
 describe("Chime backend", () => {
   it("serves every themed sound as a WAV asset", async () => {
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "chime",
-      sdk: { subscribe: () => () => {} },
-    });
+    const { bb, harness } = createFakePluginHost({ pluginId: "chime" });
     await plugin(bb);
 
     for (const soundId of SOUND_IDS) {
@@ -23,13 +20,8 @@ describe("Chime backend", () => {
     const { bb, harness } = createFakePluginHost({
       pluginId: "chime",
       sdk: {
-        subscribe: () => () => {},
         projects: { list: async () => [] },
-        threads: {
-          events: { list: async () => [] },
-          interactions: { list: async () => [] },
-          get: async () => makeThreadResponse({ id: "thread-1", projectId: "project-1" }),
-        },
+        threads: { events: { list: async () => [] } },
       },
     });
     await plugin(bb);
@@ -37,26 +29,25 @@ describe("Chime backend", () => {
     await harness.behavior.emitThreadEvent("thread.active", {
       thread: makeThreadResponse({ id: "thread-1", projectId: "project-1" }),
     });
-    const response = await harness.behavior.fetchHttp("GET", "/events?after=0");
-    const payload = await response.json() as { events: Array<Record<string, unknown>> };
+    const signals = harness.inspection.realtimeSignals;
 
-    expect(payload.events).toEqual([expect.objectContaining({
-      seq: expect.any(Number),
-      notification: expect.objectContaining({
-        kind: "started",
-        threadId: "thread-1",
-        projectId: "project-1",
+    expect(signals).toEqual([{
+      channel: NOTIFICATION_CHANNEL,
+      payload: expect.objectContaining({
+        notification: expect.objectContaining({
+          id: expect.any(String),
+          kind: "started",
+          threadId: "thread-1",
+          projectId: "project-1",
+        }),
       }),
-    })]);
-    expect(JSON.stringify(payload)).not.toContain("message");
+    }]);
+    expect(JSON.stringify(signals)).not.toContain("message");
     await harness.lifecycle.dispose();
   });
 
-  it("honours muted projects before queueing", async () => {
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "chime",
-      sdk: { subscribe: () => () => {} },
-    });
+  it("honours muted projects before publishing", async () => {
+    const { bb, harness } = createFakePluginHost({ pluginId: "chime" });
     await plugin(bb);
     await harness.behavior.callRpc("updateConfig", {
       enabled: true,
@@ -77,45 +68,27 @@ describe("Chime backend", () => {
     await harness.behavior.emitThreadEvent("thread.active", {
       thread: makeThreadResponse({ id: "thread-1", projectId: "project-1" }),
     });
-    const response = await harness.behavior.fetchHttp("GET", "/events?after=0");
-    const payload = await response.json() as { events: unknown[] };
-    expect(payload.events).toEqual([]);
+    expect(harness.inspection.realtimeSignals).toEqual([]);
     await harness.lifecycle.dispose();
   });
 
-  it("publishes each pending interaction once", async () => {
-    let changed: ((event: { id?: string; changes: readonly string[] }) => void) | undefined;
-    const interactions = [{
-      id: "interaction-1",
-      status: "pending",
-      payload: { kind: "user_question" },
-    }];
-    const thread = makeThreadResponse({ id: "thread-1", projectId: "project-1" });
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "chime",
-      sdk: {
-        subscribe: ((args: { callback: typeof changed }) => {
-          changed = args.callback;
-          return () => {};
-        }) as never,
-        threads: {
-          interactions: { list: async () => interactions as never },
-          get: async () => thread,
-        },
-      },
-    });
+  it("publishes pending questions and approvals only", async () => {
+    const { bb, harness } = createFakePluginHost({ pluginId: "chime" });
     await plugin(bb);
-
-    changed?.({ id: "thread-1", changes: ["interactions-changed"] });
-    changed?.({ id: "thread-1", changes: ["interactions-changed"] });
-
-    await vi.waitFor(async () => {
-      const response = await harness.behavior.fetchHttp("GET", "/events?after=0");
-      const payload = await response.json() as { events: Array<{ notification: { kind: string; interactionId?: string } }> };
-      expect(payload.events.map(({ notification }) => notification)).toEqual([
-        expect.objectContaining({ kind: "question", interactionId: "interaction-1" }),
-      ]);
+    const thread = makeThreadResponse({ id: "thread-1", projectId: "project-1" });
+    const pending = (id: string, kind: string) => ({
+      thread,
+      interaction: { id, threadId: "thread-1", status: "pending", payload: { kind } } as never,
     });
+
+    await harness.behavior.emitThreadEvent("interaction.pending", pending("interaction-1", "user_question"));
+    await harness.behavior.emitThreadEvent("interaction.pending", pending("interaction-2", "approval"));
+    await harness.behavior.emitThreadEvent("interaction.pending", pending("interaction-3", "plugin"));
+
+    expect(harness.inspection.realtimeSignals.map(({ payload }) => (payload as { notification: unknown }).notification)).toEqual([
+      expect.objectContaining({ kind: "question", interactionId: "interaction-1" }),
+      expect.objectContaining({ kind: "approval", interactionId: "interaction-2" }),
+    ]);
     await harness.lifecycle.dispose();
   });
 });
